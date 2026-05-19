@@ -1,15 +1,10 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/ping", "destination": "/api/ping" },
-    { "source": "/(.*)", "destination": "/api/index" }
-  ],
   "functions": {
-    "api/index.js": {
-      "maxDuration": 15
-    },
-    "api/ping.js": {
-      "maxDuration": 5
-    }
+    "api/ping.js": { "maxDuration": 10 },
+    "api/health.js": { "maxDuration": 10 },
+    "api/health/db.js": { "maxDuration": 15 },
+    "api/create-payment-intent.js": { "maxDuration": 30 },
+    "api/webhook.js": { "maxDuration": 30 }
   }
 }

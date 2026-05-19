@@ -5,7 +5,8 @@ let connectionPromise = null;
 const MONGO_OPTIONS = {
   serverSelectionTimeoutMS: 8000,
   connectTimeoutMS: 8000,
-  maxPoolSize: 5,
+  maxPoolSize: 1,
+  bufferCommands: false,
 };
 
 async function connectDB() {
