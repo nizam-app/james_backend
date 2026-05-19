@@ -10,15 +10,17 @@ const webhookRoutes = require('./routes/webhook.routes');
 
 const app = express();
 
-/** CORS first — required for diydryrental.com → Vercel API (incl. OPTIONS preflight) */
-function corsMiddleware(req, res, next) {
+function applyCorsHeaders(req, res) {
   const origin = req.headers.origin;
-
   if (origin && isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
+}
 
+/** CORS first — required for diydryrental.com → Vercel API (incl. OPTIONS preflight) */
+function corsMiddleware(req, res, next) {
+  applyCorsHeaders(req, res);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -30,6 +32,20 @@ function corsMiddleware(req, res, next) {
   next();
 }
 
+async function requireDb(req, res, next) {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('Database connection failed:', err.message);
+    applyCorsHeaders(req, res);
+    res.status(503).json({
+      message:
+        'Database unavailable. Check MONGO_URI on Vercel (use MongoDB Atlas, not localhost).',
+    });
+  }
+}
+
 app.use(corsMiddleware);
 
 app.use(
@@ -39,40 +55,34 @@ app.use(
 );
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Stripe webhooks require the raw body (must be registered before express.json)
+app.use(express.json({ limit: '100kb' }));
+
+/** Fast health check — does NOT wait for MongoDB (avoids browser timeout) */
+app.get('/api/health', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'diydry-payment-api',
+    mongoConfigured: Boolean(process.env.MONGO_URI),
+  });
+});
+
+/** Optional: verify MongoDB from Atlas / Vercel */
+app.get('/api/health/db', requireDb, (_req, res) => {
+  res.json({ ok: true, database: 'connected' });
+});
+
+// Stripe webhooks require the raw body
 app.use(
   '/api/webhook',
   express.raw({ type: 'application/json' }),
+  requireDb,
   webhookRoutes
 );
 
-app.use(express.json({ limit: '100kb' }));
-
-app.use(async (req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    return next();
-  }
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error('Database connection failed:', err.message);
-    res.status(503).json({ message: 'Database unavailable' });
-  }
-});
-
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'diydry-payment-api' });
-});
-
-app.use('/api', paymentRoutes);
+app.use('/api', requireDb, paymentRoutes);
 
 app.use((err, req, res, _next) => {
-  const origin = req.headers.origin;
-  if (origin && isOriginAllowed(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
+  applyCorsHeaders(req, res);
   console.error(err);
   return res.status(500).json({ message: 'Internal server error' });
 });
