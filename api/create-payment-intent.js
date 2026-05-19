@@ -30,7 +30,8 @@ module.exports = async (req, res) => {
     return sendJson(res, result.status, result.data);
   } catch (err) {
     console.error('create-payment-intent error:', err);
-    return sendJson(res, 500, {
+    const status = err.message === 'Invalid JSON body' ? 400 : 500;
+    return sendJson(res, status, {
       message: err.message || 'Internal server error',
     });
   }
