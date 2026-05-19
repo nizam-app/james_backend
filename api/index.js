@@ -1,7 +1,35 @@
 /**
- * Vercel serverless entry — exports the Express app (no app.listen).
- * @see https://vercel.com/docs/frameworks/backend/express
+ * Vercel serverless entry for Express.
  */
-const app = require('../src/app');
+const serverless = require('serverless-http');
 
-module.exports = app;
+let handler;
+
+function getHandler() {
+  if (!handler) {
+    const app = require('../src/app');
+    handler = serverless(app, {
+      binary: false,
+      request(req, _event, context) {
+        context.callbackWaitsForEmptyEventLoop = false;
+      },
+    });
+  }
+  return handler;
+}
+
+module.exports = async (req, res) => {
+  try {
+    return await getHandler()(req, res);
+  } catch (err) {
+    console.error('API boot error:', err);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(
+      JSON.stringify({
+        message: 'API failed to start',
+        error: err.message,
+      })
+    );
+  }
+};

@@ -57,6 +57,14 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 app.use(express.json({ limit: '100kb' }));
 
+app.get('/', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'diydry-payment-api',
+    endpoints: ['/api/health', '/api/health/db', '/api/ping', '/api/create-payment-intent'],
+  });
+});
+
 /** Fast health check — does NOT wait for MongoDB (avoids browser timeout) */
 app.get('/api/health', (_req, res) => {
   res.json({
