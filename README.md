@@ -32,7 +32,7 @@ API listens on `http://localhost:5000` by default.
 
 In [Stripe Dashboard → Webhooks](https://dashboard.stripe.com/webhooks), add an endpoint:
 
-- **URL:** `https://YOUR_BACKEND_DOMAIN.com/api/webhook`
+- **URL:** `https://james-backend-pink.vercel.app/api/webhook`
 - **Events:** `payment_intent.succeeded`, `payment_intent.payment_failed`
 - Copy the signing secret into `STRIPE_WEBHOOK_SECRET`
 
@@ -95,8 +95,8 @@ Creates a pending MongoDB order, recalculates totals, and returns a Stripe `clie
 Set in your checkout HTML widget:
 
 ```javascript
-const DIYDRY_API_BASE = 'https://YOUR_BACKEND_DOMAIN.com';
-const stripePublicKey = 'pk_live_...'; // publishable key only
+const DIYDRY_API_BASE = 'https://james-backend-pink.vercel.app';
+const stripePublicKey = 'pk_test_...'; // publishable key only (match Vercel STRIPE_SECRET_KEY mode)
 ```
 
 Call `POST ${DIYDRY_API_BASE}/api/create-payment-intent` instead of the WordPress REST route.
@@ -116,7 +116,7 @@ Call `POST ${DIYDRY_API_BASE}/api/create-payment-intent` instead of the WordPres
 4. Add **Environment Variables** (Production): `MONGO_URI`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `FRONTEND_ORIGIN`, `NODE_ENV=production`.
 5. Deploy. Your API base URL is `https://YOUR-PROJECT.vercel.app`.
 6. Stripe webhook URL: `https://YOUR-PROJECT.vercel.app/api/webhook`.
-7. Update Elementor checkout: `DIYDRY_API_BASE = 'https://YOUR-PROJECT.vercel.app'`.
+7. Update Elementor checkout: `DIYDRY_API_BASE = 'https://james-backend-pink.vercel.app'`.
 
 Use **MongoDB Atlas** for `MONGO_URI` (not `localhost`). Local dev still uses `npm run dev`.
 
